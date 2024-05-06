@@ -1,0 +1,11 @@
+version: '3'
+services:
+  map:
+    build:  .
+    container_name: map2
+    #restart: always      
+    ports:
+      - "3000:3000"
+    network_mode: bridge  # Use the bridge network driver
+    environment:
+      - NODE_EXTRA_CA_CERTS=ca.pem

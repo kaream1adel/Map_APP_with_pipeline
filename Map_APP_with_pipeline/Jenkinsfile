@@ -1,0 +1,205 @@
+pipeline {
+    agent any
+    
+     
+    
+    environment {
+        // Define environment variables
+       // client-server-ip='34.205.28.142'
+        STATIC_ANALYSIS_TYPE = '0'               // 0 for trivy scan only & 1 for sonarqube scan only
+        DOCKER_HUB_CREDENTIALS =credentials('Dockerhub')
+        GIT_CREDENTIALS =credentials('git-login')
+        //sonar qube
+       SCANNER_HOME = tool 'SonarScanner' // Assuming SonarQube Scanner is configured as a tool in Jenkins
+        SONAR_PROJECT_KEY = 'APP'
+        SONAR_PROJECT_NAME = 'APP'
+        SONAR_PROJECT_VERSION = '1.0'
+        SONAR_INSTANCE_IP= '44.195.26.185'
+
+        SONAR_TOKEN= credentials('sonar-credentials')
+        //trivy
+        DOCKER_IMAGE= 'app'
+        DOCKER_CONTAINER= "APP-container"
+        //emqx path of certificates
+        //path_var="/home/ubuntu/Graduation_certs/certs"
+
+        
+
+    }
+    
+    stages {
+        stage('Git Checkout') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'git-login', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                // Checkout source code from GitHub
+                git branch: 'kaream' ,credentialsId: 'git-login', url: 'https://github.com/SaherAttia/Frontend-Module.git'
+                }
+            }
+        }
+        
+         
+        stage('Sonar-Qube-Analysis'){
+            when {
+               expression { STATIC_ANALYSIS_TYPE == '0'}
+            }
+
+            steps{
+                
+                    
+                   script {
+                    withSonarQubeEnv('Sonar-Server') {
+                        sh "echo 'start sonarqube analysis'"
+                         withCredentials([string(credentialsId: 'sonar-credentials', variable: 'sonarLogin')]) {
+                        sh "${SCANNER_HOME}/bin/sonar-scanner \
+                            -Dsonar.projectKey=${SONAR_PROJECT_KEY}\
+                            -Dsonar.projectName=${SONAR_PROJECT_NAME}\
+                            -Dsonar.projectVersion=${SONAR_PROJECT_VERSION}\
+                            -Dsonar.token=${SONAR_TOKEN}"
+                         
+
+                        //     env.WORKSPACE = pwd()
+                        //     def file = readFile "${env.WORKSPACE}/.scannerwork/report-task.txt"
+                        //     echo file.split("\n")[5]
+                            
+                        //     def resp = httpRequest file.split("\n")[5].split("l=")[1]
+                            
+                        //     ceTask = readJSON text: resp.content
+                        //     echo ceTask.toString()
+                            
+                        //     def response2 = httpRequest url : 'http://${SONAR_INSTANCE_IP}:9000' + "/api/qualitygates/project_status?analysisId=" + ceTask["task"]["analysisId"]
+                        //     def qualitygate =  readJSON text: response2.content
+                        //     echo qualitygate.toString()
+                        //     if ("ERROR".equals(qualitygate["projectStatus"]["status"])) {
+                        //         echo "Build Failed"
+                        //     }
+                        //     else {
+                        //         echo "Build Passed"
+                        //     //   build_job("Trigger the delivery job")	                    
+                        // }
+                       
+                        }
+
+                        sh " echo 'end static analysis'"
+                    }
+                     //waitForQualityGate abortPipeline: true, serverUrl: 'Sonar-Server'
+                }
+                   
+                }
+                
+            }
+            stage('Quality Gate'){
+                when {
+               expression { STATIC_ANALYSIS_TYPE == '0'} //
+            }
+                    steps{
+                    timeout(time: 3, unit: 'MINUTES'){
+                    script{
+                        
+                        def qg = waitForQualityGate()
+                        if(qg.status != 'OK'){
+                            error "ERROR"
+                        }
+                        //else sh "echo 'analysis success'"
+                    }
+
+                    }
+                    }
+                
+            }
+
+        stage('Docker Build') {
+            steps {
+                script {
+                   sh 'docker build -t kaream10/${DOCKER_IMAGE}:latest .' 
+                }
+            }
+        }
+
+
+
+
+        // stage ('trivy scan'){
+        //     when {
+        //         expression { STATIC_ANALYSIS_TYPE == '1'}
+        //     }
+        //     steps{
+        //     script {
+        //                // Scan the Docker image with Trivy
+        //                //sh "trivy --exit-code 1 --severity HIGH,CRITICAL --no-progress $CONTAINER_IMAGE"
+
+        //              // Execute Trivy scan
+        //             //def trivyScan =  sh(script: "trivy  image -f json -o --skip-dirs "/node_modules/" --skip-dirs public ${DOCKER_IMAGE}results.json kaream10/${DOCKER_IMAGE}:latest", returnStatus: true)  
+        //             def trivyScan = sh(script: "trivy image -f json -o results.json --skip-dirs /node_modules/ --skip-dirs /public --scanners vuln kaream10/${DOCKER_IMAGE}:latest", returnStatus: true)
+
+        //             // Check the exit code
+        //             if (trivyScan == 0) {
+        //                 echo "No high or critical vulnerabilities found."
+        //             } else {
+        //                 error "High or critical vulnerabilities found."
+        //             }
+        //             // Archive the JSON report
+        //             archiveArtifacts artifacts: 'results.json', onlyIfSuccessful: false
+        //            }
+        //     }
+        // }
+
+
+        stage('Container regestiry Push') {
+            steps {
+                script {
+                     sh 'echo $DOCKER_HUB_CREDENTIALS_PSW |  docker login -u $DOCKER_HUB_CREDENTIALS_USR --password-stdin'                		
+	                    echo 'Login Completed'      
+	                         
+                    
+                        sh "docker push kaream10/${DOCKER_IMAGE}:latest"           
+                        echo 'Push Image Completed'       
+                }
+            }
+        }
+        // stage ('AWS Deploying'){
+        //     steps{
+        //          sshagent(credentials: ['ssh-credentials']) {       //UPDATEABLE
+        //                 sh """
+		// 	            ssh -o StrictHostKeyChecking=no -l ubuntu 100.27.117.60 << END 
+        //                 docker ps
+        //                 # Check if the container exists
+        //                 if docker ps -a --format '{{.Names}}' | grep -q "^${DOCKER_CONTAINER}\$"; then
+        //                     # Container exists, stop and remove it
+        //                     docker stop "${DOCKER_CONTAINER}" >/dev/null 2>&1  # Stop the container silently
+        //                     docker rm "${DOCKER_CONTAINER}" >/dev/null 2>&1    # Remove the container silently
+        //                     echo "Container '${DOCKER_CONTAINER}' has been removed."
+        //                 else
+        //                     # Container does not exist
+        //                     echo "Container '${DOCKER_CONTAINER}' does not exist."
+        //                 fi
+        //                 docker run -d --name ${DOCKER_CONTAINER}\
+        //                 -p 1883:1883 \
+        //                 -p 8083:8083 \
+        //                 -p 8084:8084 \
+        //                 -p 8883:8883 \
+        //                 -p 18083:18083 \
+        //                 -p 9100:9100 \
+        //                 -v ${path_var}/ca.pem:/opt/emqx/etc/certs/cacert.pem \
+        //                 -v ${path_var}/emqx.key:/opt/emqx/etc/certs/key.pem \
+        //                 -v ${path_var}/emqx.pem:/opt/emqx/etc/certs/cert.pem \
+        //                 kaream10/${DOCKER_IMAGE}:latest
+        //                 echo "${DOCKER_CONTAINER} container up & running"
+        //             """
+        //                 // should put the updated code on the docker hub using map10/emqx:latest --> for example
+        //          }
+        //     }
+        // }
+    }
+
+    post {
+        success {
+            slackSend color: 'good', message: "Build SUCCESS for ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
+            
+            echo "Success"
+        }
+        failure {
+            slackSend color: 'danger', message: "Build failed for ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
+           
+        }
+    }
+}

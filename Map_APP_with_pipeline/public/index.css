@@ -1,0 +1,194 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'poppins' , sans-serif;
+}
+
+body {
+    background: #081b29;
+    color: #ededed
+}
+
+header {
+    top: 0;
+    left: 0;
+    width:100% ;
+    padding: 10px;
+    height: 10vh ;
+    background: transparent ;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+}
+
+.logo{
+    font-size: 25px;
+    color:#ededed ;
+    text-decoration: none;
+    white-space: nowrap;
+    display: flex;
+    justify-content: start;
+    align-items: center;
+    font-weight: 600;
+    margin-left:  4% ;  
+    width: 20%;
+}
+.logo p{
+    padding-left: 30px; 
+    font-size: 23px; 
+}
+
+.navbar{
+    width: 45%;
+    display: flex;
+    justify-content:center;
+    gap:  5%;
+}
+.navbar a{
+    font-size: 18px;
+    color:#fff ;
+    text-decoration: none;
+    font-weight: 550;  
+    transition: 0.3s;
+}
+.navbar a.active,
+.navbar a:hover{  
+    color: #00abf0
+}
+
+#container {
+    display: flex;
+    height:80vh ;
+    padding-top: 2px;
+    border-radius: 50px;
+
+}
+
+#left-container {
+    flex: 1;
+    padding: 10px;
+    overflow: auto;
+    border-radius: 50px;
+    margin-right: 10px;
+    display: flex;
+    flex-direction: column;
+
+}
+
+#left-container.hidden {
+    display: none;
+}
+
+#left-container h2 {
+    background-color: #424040;
+    /* Background color for the left part header */
+    color: #fff;
+    padding: 7px;
+    /* Increased padding */
+    border-radius: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 25px;
+    /* Increased font size */
+}
+
+.message-container {
+    margin-bottom: 15px;
+    /* Full width for messages */
+}
+
+
+.message {
+ padding: 10px;
+ border-radius: 15px;
+ word-wrap: break-word;
+}
+
+.warning-message {
+    background-color: #424040;
+    color: #fff;
+}
+
+.info-message {
+ background-color: #5bc0de;
+ color: #fff;
+}
+.message.warning-message+.message.warning-message {
+    margin-top: 10px;
+    /* Adjust the margin as needed */
+}
+
+#map-container {
+    flex:2;
+ margin-right:  20px;
+ border-radius: 50px;
+    overflow: auto;
+    background-color: #e6e6e6;
+    height: 100%;
+    /* Set a height for the map container */
+}
+#map-container.fullscreen {
+ flex: 1;
+ /* margin: 20px; */
+ width: 100%;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    /* Make the map fill its container */
+}
+
+.btn-box{
+    display: flex;
+    justify-content:flex-end;
+    align-items: center;
+    margin-left: 587px;
+    /* padding-left:40px ; */
+    width: 60%;
+    height:50px;
+    gap: 40px ;
+
+}
+
+.btn-box button{
+    position: relative ;
+    top:10px ;
+    right:30px;
+
+    display:inline-flex ;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    width:35% ;
+    height:100% ;
+    background: #424040;
+    border:2px solid #424040;
+    border-radius: 8px ;
+    font-size: 18px;
+    color:#fff ;
+    font-weight:600 ;
+    letter-spacing: 1px;
+    z-index: 1;
+    overflow:hidden ;
+    transition: 0.5s;
+
+}
+
+.btn-box button:hover{
+    color: #00abf0;
+}
+
+#recenterButton{
+    width:20%;
+}
+#zoomInButton{
+    width:20%;
+}
+#zoomOutButton{
+    width:20%;
+}
